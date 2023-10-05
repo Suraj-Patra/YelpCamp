@@ -1,6 +1,7 @@
 const path = require("path");
 const express = require("express");
 const mongoose = require("mongoose");
+const methodOverride = require("method-override");
 
 const app = express();
 const PORT = 8000;
@@ -21,17 +22,46 @@ app.set("views", path.join(__dirname, "views"));
 /* Middlewares */
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(methodOverride("_method"));
 
 /* Routers */
 app.get("/", (req, res) => {
   res.render("home");
 });
-app.get("/makecampground", async (req, res) => {
-  const camp = await Campground.create({
-    title: "My Backyard",
-    description: "Free camping",
-  });
-  res.send(camp);
+
+// Get Campground :
+app.get("/campgrounds/allCamps", async (req, res) => {
+  const camps = await Campground.find({});
+  res.render("campgrounds/allCamps", { camps });
+});
+app.get("/campgrounds/oneCamp/:id", async (req, res) => {
+  const camp = await Campground.findById(req.params.id);
+  res.render("campgrounds/oneCamp", { camp });
+});
+
+// Add Campground :
+app.get("/campgrounds/newCamp", (req, res) => {
+  res.render("campgrounds/newCamp");
+});
+app.post("/campgrounds/newCamp", async (req, res) => {
+  const camp = await Campground.create(req.body);
+  res.redirect(`/campgrounds/oneCamp/${camp._id}`);
+});
+
+// Edit Campground :
+app.get("/campgrounds/editCamp/:id", async (req, res) => {
+  const camp = await Campground.findById(req.params.id);
+  res.render("campgrounds/editCamp", { camp });
+});
+app.put("/campgrounds/editCamp/:id", async (req, res) => {
+  const camp = await Campground.findByIdAndUpdate(req.params.id, req.body);
+  res.redirect(`/campgrounds/oneCamp/${camp._id}`);
+});
+
+// Delete Campground :
+app.delete("/campgrounds/deleteCamp/:id", async (req, res) => {
+  await Campground.findByIdAndDelete(req.params.id);
+  res.redirect("/campgrounds/allCamps");
 });
 
 app.listen(PORT, () => console.log(`Server running at : ${PORT}`));
