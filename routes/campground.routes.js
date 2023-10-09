@@ -6,6 +6,7 @@ const Campground = require('../models/campground.model');
 const catchAsync = require('../utils/catchAsync.util'); // For catching asynchronous errors
 const ExpressError = require('../utils/ExpressError.util'); // For customized errors
 const { campgroundSchema } = require('../JoiSchemas');
+const { isLoggedIn } = require('../middleware');
 
 // Middlewares for validation :
 function validateCampground(req, res, next) {
@@ -42,11 +43,12 @@ router.get(
 );
 
 // Add Campground :
-router.get('/newCamp', (req, res) => {
+router.get('/newCamp', isLoggedIn, (req, res) => {
 	res.render('campgrounds/newCamp');
 });
 router.post(
 	'/newCamp',
+	isLoggedIn,
 	validateCampground,
 	catchAsync(async (req, res, next) => {
 		const camp = await Campground.create(req.body);
@@ -58,6 +60,7 @@ router.post(
 // Edit Campground :
 router.get(
 	'/editCamp/:id',
+	isLoggedIn,
 	catchAsync(async (req, res) => {
 		const camp = await Campground.findById(req.params.id);
 		// If campground not found
@@ -70,6 +73,7 @@ router.get(
 );
 router.put(
 	'/editCamp/:id',
+	isLoggedIn,
 	validateCampground,
 	catchAsync(async (req, res) => {
 		const camp = await Campground.findByIdAndUpdate(

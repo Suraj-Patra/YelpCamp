@@ -5,30 +5,36 @@ const flash = require('connect-flash');
 const ejsMate = require('ejs-mate');
 const mongoose = require('mongoose');
 const methodOverride = require('method-override');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
 
 const app = express();
 const PORT = 8000;
 
-/* Local Imports */
+/* ---------------------- Local Imports --------------------------- */
 const campgroundRouter = require('./routes/campground.routes');
 const reviewRouter = require('./routes/review.routes');
+const userRouter = require('./routes/user.routes');
+const User = require('./models/user.model');
 
-/* Database */
+/* ---------------------- Database -------------------------------- */
 mongoose
 	.connect('mongodb://127.0.0.1:27017/yelp-camp')
 	.then((res) => console.log('MongoDB Connected'))
 	.catch((err) => console.log('Error connecting MongoDB', err));
 
-/* View Engine */
+/* ---------------------- View Engine ----------------------------- */
 app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-/* Middlewares */
+/* ---------------------- Middlewares ----------------------------- */
+// express :
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(methodOverride('_method'));
+// session & flash :
 const sessionConfig = {
 	secret: 'thisisasecret',
 	resave: false,
@@ -41,17 +47,27 @@ const sessionConfig = {
 };
 app.use(session(sessionConfig));
 app.use(flash());
+
+// passport :
+app.use(passport.initialize());
+app.use(passport.session()); // need to use after express.session()
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+// Setting locals :
 app.use((req, res, next) => {
+	res.locals.currentUser = req.user;
 	res.locals.success = req.flash('success');
 	res.locals.error = req.flash('error');
 	next();
 });
 
-/* Routers */
+/* ------------------------ Routers ------------------------------ */
 app.get('/', (req, res) => {
 	res.render('home');
 });
-
+app.use('/users', userRouter);
 app.use('/campgrounds', campgroundRouter);
 app.use('/campgrounds/:id/reviews', reviewRouter);
 
