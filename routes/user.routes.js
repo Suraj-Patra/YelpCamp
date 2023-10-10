@@ -3,58 +3,37 @@ const passport = require('passport');
 
 const router = express.Router();
 
-const User = require('../models/user.model');
+/* Local Imports */
 const catchAsync = require('../utils/catchAsync.util');
 const { storeReturnTo } = require('../middleware');
+const {
+	handleRenderUserRegister,
+	handleUserRegister,
+	handleRenderUserLogin,
+	handleUserLogin,
+	handleUserLogout,
+} = require('../controllers/users.controller');
 
 /* Register */
-router.get('/register', (req, res) => {
-	res.render('users/register');
-});
-router.post(
-	'/register',
-	catchAsync(async (req, res, next) => {
-		try {
-			const { username, email, password } = req.body;
-			const user = new User({ username, email });
-			const newUser = await User.register(user, password);
-			req.login(newUser, (err) => {
-				if (err) return next(err);
-				req.flash('success', 'Welcome to Yelp Camp!');
-				res.redirect('/campgrounds/allCamps');
-			});
-		} catch (e) {
-			req.flash('error', e.message);
-			res.redirect('/users/register');
-		}
-	})
-);
+router
+	.route('/register')
+	.get(handleRenderUserRegister)
+	.post(catchAsync(handleUserRegister));
 
 /* Login */
-router.get('/login', (req, res) => {
-	res.render('users/login');
-});
-router.post(
-	'/login',
-	storeReturnTo,
-	passport.authenticate('local', {
-		failureFlash: true,
-		failureRedirect: '/users/login',
-	}),
-	(req, res) => {
-		req.flash('success', 'Welcome back!');
-		const redirectUrl = res.locals.returnTo || '/campgrounds/allCamps';
-		res.redirect(redirectUrl);
-	}
-);
+router
+	.route('/login')
+	.get(handleRenderUserLogin)
+	.post(
+		storeReturnTo,
+		passport.authenticate('local', {
+			failureFlash: true,
+			failureRedirect: '/users/login',
+		}),
+		handleUserLogin
+	);
 
 /* Logout */
-router.get('/logout', (req, res) => {
-	req.logout((err) => {
-		if (err) return next(err);
-		req.flash('success', 'Successfully Logged out!');
-		res.redirect('/campgrounds/allCamps');
-	});
-});
+router.get('/logout', handleUserLogout);
 
 module.exports = router;
