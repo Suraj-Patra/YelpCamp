@@ -2,7 +2,12 @@
 <div class="row">
 	<div class="col-6">
 		<div class="card mb-3">
-			<img src="<%= camp.image %>" class="card-img-top" alt="..." />
+			<img
+				src="<%= camp.image %>"
+				class="card-img-top"
+				style="background-position: center"
+				alt="..."
+			/>
 			<div class="card-body">
 				<h5 class="card-title"><%= camp.title %></h5>
 				<p class="card-text"><%= camp.description %></p>
@@ -11,8 +16,13 @@
 				<li class="list-group-item text-secondary">
 					<%= camp.location %>
 				</li>
+				<li class="list-group-item">
+					Submitted by <%= camp.author.username %>
+				</li>
 				<li class="list-group-item">$<%= camp.price %></li>
 			</ul>
+
+			<% if(currentUser && camp.author.equals(currentUser._id)) { %>
 			<div class="card-body">
 				<a
 					href="/campgrounds/editCamp/<%= camp._id %>"
@@ -29,10 +39,13 @@
 					</button>
 				</form>
 			</div>
+			<% } %>
+
 			<div class="card-footer text-secondary">2 days ago</div>
 		</div>
 	</div>
 	<div class="col-6">
+		<% if(currentUser) { %>
 		<form
 			action="/campgrounds/<%= camp._id %>/reviews"
 			method="POST"
@@ -65,18 +78,22 @@
 			</div>
 			<button type="submit" class="btn btn-success">Submit</button>
 		</form>
-
-		<% for(let review of camp.reviews) { %>
+		<% } %> <% for(let review of camp.reviews) { %>
 		<div class="card mb-3">
 			<div class="card-body">
 				<h5 class="card-title">Rating : <%= review.rating %></h5>
+				<h6 class="card-subtitle mb-2 text-secondary">
+					By <%= review.author.username %>
+				</h6>
 				<p class="card-text">Review : <%= review.body %></p>
+				<% if(currentUser && review.author.equals(currentUser._id)) { %>
 				<form
 					action="/campgrounds/<%= camp._id %>/reviews/<%= review._id %>?_method=DELETE"
 					method="POST"
 				>
 					<button class="btn btn-sm btn-danger">Delete</button>
 				</form>
+				<% } %>
 			</div>
 		</div>
 		<% } %>
