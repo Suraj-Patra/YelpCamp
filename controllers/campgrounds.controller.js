@@ -1,5 +1,6 @@
 /* Local Imports */
 const Campground = require('../models/campground.model');
+const { cloudinary } = require('../cloudinary/');
 
 // Get Campground :
 const handleGetAllCampgrounds = async (req, res) => {
@@ -26,6 +27,10 @@ const handleAddCampground = async (req, res, next) => {
 	const camp = await Campground.create({
 		...req.body,
 		author: req.user._id,
+		images: req.files.map((file) => ({
+			url: file.path,
+			filename: file.filename,
+		})),
 	});
 	req.flash('success', 'Successfully made a new campground!');
 	res.redirect(`/campgrounds/oneCamp/${camp._id}`);
@@ -44,6 +49,20 @@ const handleRenderEditCampground = async (req, res) => {
 const handleEditCampground = async (req, res) => {
 	const { id } = req.params;
 	const camp = await Campground.findByIdAndUpdate(id, req.body);
+	const images = req.files.map((file) => ({
+		url: file.path,
+		filename: file.filename,
+	}));
+	camp.images.push(...images);
+	await camp.save();
+	if (req.body.deleteImages) {
+		for (let filename of req.body.deleteImages) {
+			await cloudinary.uploader.destroy(filename);
+		}
+		await camp.updateOne({
+			$pull: { images: { filename: { $in: req.body.deleteImages } } },
+		});
+	}
 	req.flash('success', 'Successfully updated campground!');
 	res.redirect(`/campgrounds/oneCamp/${camp._id}`);
 };

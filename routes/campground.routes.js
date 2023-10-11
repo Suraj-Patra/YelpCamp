@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 
 /* Local Imports */
 const catchAsync = require('../utils/catchAsync.util'); // For catching asynchronous errors
 const { isLoggedIn, validateCampground, isAuthor } = require('../middleware');
+const { storage } = require('../cloudinary');
+const upload = multer({ storage });
 const {
 	handleGetAllCampgrounds,
 	handleGetOneCampground,
@@ -22,7 +25,12 @@ router.get('/oneCamp/:id', catchAsync(handleGetOneCampground));
 router
 	.route('/newCamp')
 	.get(isLoggedIn, handleRenderAddCampground)
-	.post(isLoggedIn, validateCampground, catchAsync(handleAddCampground));
+	.post(
+		isLoggedIn,
+		upload.array('image'),
+		validateCampground,
+		catchAsync(handleAddCampground)
+	);
 
 // Edit Campground :
 router
@@ -31,6 +39,7 @@ router
 	.put(
 		isLoggedIn,
 		isAuthor,
+		upload.array('image'),
 		validateCampground,
 		catchAsync(handleEditCampground)
 	);

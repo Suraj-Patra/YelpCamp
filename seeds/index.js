@@ -33,8 +33,26 @@ const seedDB = async () => {
 			/* 
 				alternate -> image: `https://loremflickr.com/300/300/woods?random=${i}`,
 				below source -> https://allegra9.medium.com/unsplash-without-api-ab2dcdb503a0
+				image: `https://source.unsplash.com/collection/${collectionID}/${imageWidth}x${imageHeight}/?sig=${i}`,
 			*/
-			image: `https://source.unsplash.com/collection/${collectionID}/${imageWidth}x${imageHeight}/?sig=${i}`,
+			images: [
+				{
+					url: 'https://res.cloudinary.com/dl5dlqqco/image/upload/v1696947001/YelpCamp/rnf4eswludbgtiziauec.jpg',
+					filename: 'YelpCamp/rnf4eswludbgtiziauec',
+				},
+				{
+					url: 'https://res.cloudinary.com/dl5dlqqco/image/upload/v1696947011/YelpCamp/rp0qxrmmbu9kaldcjiah.jpg',
+					filename: 'YelpCamp/rp0qxrmmbu9kaldcjiah',
+				},
+				{
+					url: 'https://res.cloudinary.com/dl5dlqqco/image/upload/v1696947018/YelpCamp/jon6ihwwzizgpchehut0.jpg',
+					filename: 'YelpCamp/jon6ihwwzizgpchehut0',
+				},
+				{
+					url: 'https://res.cloudinary.com/dl5dlqqco/image/upload/v1696947048/YelpCamp/jfprfmt9vhbzjwuszcmh.png',
+					filename: 'YelpCamp/jfprfmt9vhbzjwuszcmh',
+				},
+			],
 			description:
 				'Lorem ipsum, dolor sit amet consectetur adipisicing elit. Corrupti, fuga.',
 			price: price,
