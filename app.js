@@ -11,6 +11,8 @@ const mongoose = require('mongoose');
 const methodOverride = require('method-override');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
+const mongoSanitize = require('express-mongo-sanitize'); // For restricting users to put any malicious queries
+const helmet = require('helmet'); // For security
 
 const app = express();
 const PORT = 8000;
@@ -20,6 +22,7 @@ const campgroundRouter = require('./routes/campground.routes');
 const reviewRouter = require('./routes/review.routes');
 const userRouter = require('./routes/user.routes');
 const User = require('./models/user.model');
+const ExpressError = require('./utils/ExpressError.util');
 
 /* ---------------------- Database -------------------------------- */
 mongoose
@@ -40,11 +43,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 // session & flash :
 const sessionConfig = {
+	name: 'session', // Changing the default name
 	secret: 'thisisasecret',
 	resave: false,
 	saveUninitialized: true,
 	cookie: {
 		httpOnly: true, // Default now
+		// secure: true,	// Works only with 'https'.
 		expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // 1 week
 		maxAge: 1000 * 60 * 60 * 24 * 7,
 	},
@@ -58,6 +63,64 @@ app.use(passport.session()); // need to use after express.session()
 passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
+
+// helmet Configuration :
+app.use(helmet());
+const scriptSrcUrls = [
+	'https://stackpath.bootstrapcdn.com/',
+	'https://api.tiles.mapbox.com/',
+	'https://api.mapbox.com/',
+	'https://kit.fontawesome.com/',
+	'https://cdnjs.cloudflare.com/',
+	'https://cdn.jsdelivr.net/',
+	'https://res.cloudinary.com/dv5vm4sqh/',
+];
+const styleSrcUrls = [
+	'https://kit-free.fontawesome.com/',
+	'https://stackpath.bootstrapcdn.com/',
+	'https://api.mapbox.com/',
+	'https://api.tiles.mapbox.com/',
+	'https://fonts.googleapis.com/',
+	'https://use.fontawesome.com/',
+	'https://cdn.jsdelivr.net/',
+	'https://res.cloudinary.com/dv5vm4sqh/',
+];
+const connectSrcUrls = [
+	'https://*.tiles.mapbox.com',
+	'https://api.mapbox.com',
+	'https://events.mapbox.com',
+	'https://res.cloudinary.com/dv5vm4sqh/',
+];
+const fontSrcUrls = ['https://res.cloudinary.com/dv5vm4sqh/'];
+app.use(
+	helmet.contentSecurityPolicy({
+		directives: {
+			defaultSrc: [],
+			connectSrc: ["'self'", ...connectSrcUrls],
+			scriptSrc: ["'unsafe-inline'", "'self'", ...scriptSrcUrls],
+			styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
+			workerSrc: ["'self'", 'blob:'],
+			objectSrc: [],
+			imgSrc: [
+				"'self'",
+				'blob:',
+				'data:',
+				'https://res.cloudinary.com/dl5dlqqco/', //SHOULD MATCH YOUR CLOUDINARY ACCOUNT!
+				'https://images.unsplash.com/',
+			],
+			fontSrc: ["'self'", ...fontSrcUrls],
+			mediaSrc: ['https://res.cloudinary.com/dl5dlqqco/'],
+			childSrc: ['blob:'],
+		},
+	})
+);
+
+// Mongo sanitize :
+app.use(
+	mongoSanitize({
+		replaceWith: '_',
+	})
+); // For restricting users to put any malicious queries
 
 // Setting locals :
 app.use((req, res, next) => {
@@ -86,3 +149,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => console.log(`Server running at : ${PORT}`));
+
+/* 
+	Skipped the map part for pricing issues, and continuing from the "Clean styling part"
+*/
