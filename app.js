@@ -5,6 +5,7 @@ if (process.env.NODE_ENV !== 'production') {
 const path = require('path');
 const express = require('express');
 const session = require('express-session');
+const MongoStore = require('connect-mongo'); // For storing session data
 const flash = require('connect-flash');
 const ejsMate = require('ejs-mate');
 const mongoose = require('mongoose');
@@ -15,7 +16,7 @@ const mongoSanitize = require('express-mongo-sanitize'); // For restricting user
 const helmet = require('helmet'); // For security
 
 const app = express();
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 
 /* ---------------------- Local Imports --------------------------- */
 const campgroundRouter = require('./routes/campground.routes');
@@ -25,8 +26,12 @@ const User = require('./models/user.model');
 const ExpressError = require('./utils/ExpressError.util');
 
 /* ---------------------- Database -------------------------------- */
+
+// For connecting to MongoDB Atlas :
+// const dbUrl = ;
+const dbUrl = process.env.MONGODB_URL || 'mongodb://127.0.0.1:27017/yelp-camp';
 mongoose
-	.connect('mongodb://127.0.0.1:27017/yelp-camp')
+	.connect(dbUrl)
 	.then((res) => console.log('MongoDB Connected'))
 	.catch((err) => console.log('Error connecting MongoDB', err));
 
@@ -42,9 +47,21 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 // session & flash :
+const secret = process.env.SECRET || 'thisisasecret';
+const store = MongoStore.create({
+	mongoUrl: dbUrl,
+	touchAfter: 24 * 60 * 60, // In seconds
+	crypto: {
+		secret,
+	},
+});
+store.on('error', (e) => {
+	console.log('SESSION STORE ERROR', e);
+});
 const sessionConfig = {
+	store,
 	name: 'session', // Changing the default name
-	secret: 'thisisasecret',
+	secret,
 	resave: false,
 	saveUninitialized: true,
 	cookie: {
